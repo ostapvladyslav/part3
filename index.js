@@ -1,7 +1,9 @@
 const express = require('express');
 const app = express();
+const morgan = require('morgan');
 
 app.use(express.json());
+app.use(morgan('tiny'));
 
 let persons = [
   {
@@ -25,6 +27,12 @@ let persons = [
     number: '39-23-6423122',
   },
 ];
+
+function generateId() {
+  const min = Math.ceil(0);
+  const max = Math.floor(10000);
+  return Math.floor(Math.random() * (max - min) + min); // The maximum is exclusive and the minimum is inclusive
+}
 
 app.get('/info', (req, res) => {
   res.end(`
@@ -80,12 +88,6 @@ app.post('/api/persons', (req, res) => {
   persons = persons.concat(person);
   res.json(person);
 });
-
-function generateId() {
-  const min = Math.ceil(0);
-  const max = Math.floor(10000);
-  return Math.floor(Math.random() * (max - min) + min); // The maximum is exclusive and the minimum is inclusive
-}
 
 const PORT = 3001;
 app.listen(PORT, () => {
