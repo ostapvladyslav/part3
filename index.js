@@ -3,7 +3,25 @@ const app = express();
 const morgan = require('morgan');
 
 app.use(express.json());
-app.use(morgan('tiny'));
+
+morgan.token('body', (req, res) => {
+  if (req.method === 'POST') return JSON.stringify(req.body);
+});
+
+app.use(
+  morgan(function (tokens, req, res) {
+    return [
+      tokens.method(req, res),
+      tokens.url(req, res),
+      tokens.status(req, res),
+      tokens.res(req, res, 'content-length'),
+      '-',
+      tokens['response-time'](req, res),
+      'ms',
+      tokens.body(req, res),
+    ].join(' ');
+  })
+);
 
 let persons = [
   {
@@ -88,6 +106,11 @@ app.post('/api/persons', (req, res) => {
   persons = persons.concat(person);
   res.json(person);
 });
+
+const unknownEndpoint = (req, res) => {
+  res.status(404).send({ error: 'unknown endpoint' });
+};
+app.use(unknownEndpoint);
 
 const PORT = 3001;
 app.listen(PORT, () => {
