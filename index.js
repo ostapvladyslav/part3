@@ -58,13 +58,25 @@ app.delete('/api/persons/:id', (req, res) => {
 
 app.post('/api/persons', (req, res) => {
   const body = req.body;
-  console.log(body);
+
+  if (!body.name || !body.number) {
+    return res.status(400).json({
+      error: 'name or number missing',
+    });
+  }
+
+  if (persons.filter((person) => person.name === body.name).length > 0) {
+    return res.status(400).json({
+      error: 'name must be uniques',
+    });
+  }
 
   const person = {
     id: generateId(),
     name: body.name,
-    number: body.number || '',
+    number: body.number,
   };
+
   persons = persons.concat(person);
   res.json(person);
 });
