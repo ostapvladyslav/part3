@@ -41,13 +41,13 @@ app.use(
 app.use(express.static('build'));
 
 app.get('/info', (req, res, next) => {
-  res
-    .end(
-      `
-  <p>Phonebook has info for ${persons.length} people</p>
-  <p>${new Date()}</p>
-  `
-    )
+  Person.find({})
+    .then((result) => {
+      res.end(`
+    <p>Phonebook has info for ${result.length} people</p>
+    <p>${new Date()}</p>
+    `);
+    })
     .catch((error) => next(error));
 });
 
