@@ -1,11 +1,10 @@
 require('dotenv').config();
 const express = require('express');
-const morgan = require('morgan');
+const app = express();
 const cors = require('cors');
+const morgan = require('morgan');
 
 const Person = require('./models/person');
-
-const app = express();
 
 morgan.token('body', (req, res) => {
   if (req.method === 'POST') return JSON.stringify(req.body);
@@ -13,10 +12,18 @@ morgan.token('body', (req, res) => {
 const unknownEndpoint = (req, res) => {
   res.status(404).send({ error: 'unknown endpoint' });
 };
+const errorHandler = (error, req, res, next) => {
+  console.log(error.message);
+
+  if (error.name === 'CastError') {
+    return res.status(400).send({ error: 'malformatted id' });
+  }
+
+  next(error);
+};
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static('build'));
 app.use(
   morgan(function (tokens, req, res) {
     return [
@@ -31,6 +38,7 @@ app.use(
     ].join(' ');
   })
 );
+app.use(express.static('build'));
 
 app.get('/info', (req, res, next) => {
   res
@@ -46,7 +54,11 @@ app.get('/info', (req, res, next) => {
 app.get('/api/persons', (req, res, next) => {
   Person.find({})
     .then((persons) => {
-      res.json(persons);
+      if (persons) {
+        res.json(persons);
+      } else {
+        res.status(404).end();
+      }
     })
     .catch((error) => next(error));
 });
@@ -54,7 +66,11 @@ app.get('/api/persons', (req, res, next) => {
 app.get('/api/persons/:id', (req, res, next) => {
   Person.findById(req.params.id)
     .then((person) => {
-      res.json(person);
+      if (person) {
+        res.json(person);
+      } else {
+        res.status(404).end();
+      }
     })
     .catch((error) => next(error));
 });
@@ -90,6 +106,7 @@ app.delete('/api/persons/:id', (req, res, next) => {
 });
 
 app.use(unknownEndpoint);
+app.use(errorHandler);
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
