@@ -78,8 +78,13 @@ app.get('/api/persons/:id', (req, res, next) => {
 app.post('/api/persons', (req, res, next) => {
   const body = req.body;
 
-  if (body.name === undefined || body.number === undefined) {
-    return json.status(400).json({
+  if (
+    body.name === '' ||
+    body.name === undefined ||
+    body.number === '' ||
+    body.number === undefined
+  ) {
+    return res.status(400).json({
       error: 'name or number missing',
     });
   }
@@ -101,6 +106,27 @@ app.delete('/api/persons/:id', (req, res, next) => {
   Person.findByIdAndRemove(req.params.id)
     .then((result) => {
       res.status(204).end();
+    })
+    .catch((error) => next(error));
+});
+
+app.put('/api/persons/:id', (req, res, next) => {
+  const body = req.body;
+
+  const person = {
+    number: body.number,
+  };
+
+  //? not checking for empty number?
+  //? and if i check it conflicts with frontend error messaging
+
+  Person.findByIdAndUpdate(req.params.id, person, { new: true })
+    .then((updatedPerson) => {
+      if (updatedPerson) {
+        res.json(updatedPerson);
+      } else {
+        res.status(404).end();
+      }
     })
     .catch((error) => next(error));
 });
