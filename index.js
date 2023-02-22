@@ -32,26 +32,34 @@ app.use(
   })
 );
 
-app.get('/info', (req, res) => {
-  res.end(`
+app.get('/info', (req, res, next) => {
+  res
+    .end(
+      `
   <p>Phonebook has info for ${persons.length} people</p>
   <p>${new Date()}</p>
-  `);
+  `
+    )
+    .catch((error) => next(error));
 });
 
-app.get('/api/persons', (req, res) => {
-  Person.find({}).then((persons) => {
-    res.json(persons);
-  });
+app.get('/api/persons', (req, res, next) => {
+  Person.find({})
+    .then((persons) => {
+      res.json(persons);
+    })
+    .catch((error) => next(error));
 });
 
-app.get('/api/persons/:id', (req, res) => {
-  Person.findById(req.params.id).then((person) => {
-    res.json(person);
-  });
+app.get('/api/persons/:id', (req, res, next) => {
+  Person.findById(req.params.id)
+    .then((person) => {
+      res.json(person);
+    })
+    .catch((error) => next(error));
 });
 
-app.post('/api/persons', (req, res) => {
+app.post('/api/persons', (req, res, next) => {
   const body = req.body;
 
   if (body.name === undefined || body.number === undefined) {
@@ -65,15 +73,20 @@ app.post('/api/persons', (req, res) => {
     number: body.number,
   });
 
-  person.save().then((newPerson) => {
-    res.json(newPerson);
-  });
+  person
+    .save()
+    .then((newPerson) => {
+      res.json(newPerson);
+    })
+    .catch((error) => next(error));
 });
 
-app.delete('/api/persons/:id', (req, res) => {
-  // const id = Number(req.params.id);
-  // persons = persons.filter((person) => person.id !== id);
-  // res.status(204).end();
+app.delete('/api/persons/:id', (req, res, next) => {
+  Person.findByIdAndRemove(req.params.id)
+    .then((result) => {
+      res.status(204).end();
+    })
+    .catch((error) => next(error));
 });
 
 app.use(unknownEndpoint);
