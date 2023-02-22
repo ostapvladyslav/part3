@@ -6,24 +6,11 @@ const morgan = require('morgan');
 
 const Person = require('./models/person');
 
+app.use(cors());
+app.use(express.json());
 morgan.token('body', (req, res) => {
   if (req.method === 'POST') return JSON.stringify(req.body);
 });
-const unknownEndpoint = (req, res) => {
-  res.status(404).send({ error: 'unknown endpoint' });
-};
-const errorHandler = (error, req, res, next) => {
-  console.log(error.message);
-
-  if (error.name === 'CastError') {
-    return res.status(400).send({ error: 'malformatted id' });
-  }
-
-  next(error);
-};
-
-app.use(cors());
-app.use(express.json());
 app.use(
   morgan(function (tokens, req, res) {
     return [
@@ -54,6 +41,7 @@ app.get('/info', (req, res, next) => {
 app.get('/api/persons', (req, res, next) => {
   Person.find({})
     .then((persons) => {
+      //? test if this still needed
       if (persons) {
         res.json(persons);
       } else {
@@ -66,6 +54,7 @@ app.get('/api/persons', (req, res, next) => {
 app.get('/api/persons/:id', (req, res, next) => {
   Person.findById(req.params.id)
     .then((person) => {
+      //? test if this still needed
       if (person) {
         res.json(person);
       } else {
@@ -76,23 +65,9 @@ app.get('/api/persons/:id', (req, res, next) => {
 });
 
 app.post('/api/persons', (req, res, next) => {
-  const body = req.body;
+  const { name, number } = req.body;
 
-  if (
-    body.name === '' ||
-    body.name === undefined ||
-    body.number === '' ||
-    body.number === undefined
-  ) {
-    return res.status(400).json({
-      error: 'name or number missing',
-    });
-  }
-
-  const person = new Person({
-    name: body.name,
-    number: body.number,
-  });
+  const person = new Person({ name, number });
 
   person
     .save()
@@ -111,17 +86,15 @@ app.delete('/api/persons/:id', (req, res, next) => {
 });
 
 app.put('/api/persons/:id', (req, res, next) => {
-  const body = req.body;
+  const { name, number } = req.body;
 
-  const person = {
-    number: body.number,
-  };
-
-  //? not checking for empty number?
-  //? and if i check it conflicts with frontend error messaging
-
-  Person.findByIdAndUpdate(req.params.id, person, { new: true })
+  Person.findByIdAndUpdate(
+    req.params.id,
+    { name, number },
+    { new: true, runValidators: true, context: 'query' }
+  )
     .then((updatedPerson) => {
+      //? test if this still needed
       if (updatedPerson) {
         res.json(updatedPerson);
       } else {
@@ -131,7 +104,21 @@ app.put('/api/persons/:id', (req, res, next) => {
     .catch((error) => next(error));
 });
 
+const unknownEndpoint = (req, res) => {
+  res.status(404).send({ error: 'unknown endpoint' });
+};
 app.use(unknownEndpoint);
+
+const errorHandler = (error, req, res, next) => {
+  console.log(error.message);
+
+  if (error.name === 'CastError') {
+    return res.status(400).send({ error: 'malformatted id' });
+  } else if (error.name === 'ValidationError') {
+    return res.status(400).json({ error: error.message });
+  }
+  next(error);
+};
 app.use(errorHandler);
 
 const PORT = process.env.PORT;
